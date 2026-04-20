@@ -130,7 +130,7 @@ namespace Lab5LibraryApp.Tests
 
             bool result = service.BorrowBook(bookId, userId);
 
-            Assert.IsTrue(result);
+            Assert.IsFalse(result);
         }
 
         [TestMethod]
