@@ -1,0 +1,91 @@
+﻿@page "/return"
+@rendermode InteractiveServer
+@using Lab5LibraryApp.Models
+@using Lab5LibraryApp.Services
+@inject ILibraryService LibraryService
+
+<h3>Return Book</h3>
+
+<div class="mb-3">
+    <label>Select User:</label>
+    <select class="form-control mb-2"
+            @bind="selectedUserId"
+            @bind:after="LoadBorrowedBooks">
+        <option value="0">-- Select User --</option>
+        @foreach (var user in users)
+        {
+            <option value="@user.Id">@user.Name</option>
+        }
+    </select>
+</div>
+
+@if (borrowedBooks.Any())
+{
+    <h4>Borrowed Books</h4>
+
+    <ul>
+        @foreach (var book in borrowedBooks)
+        {
+            <li>
+                @book.Title
+                <button class="btn btn-success btn-sm ms-2"
+                        @onclick="() => ReturnBook(book.Id)">
+                    Return
+                </button>
+            </li>
+        }
+    </ul>
+}
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <p>@message</p>
+}
+
+@code {
+    private List<User> users = new();
+    private List<Book> borrowedBooks = new();
+
+    private int selectedUserId;
+    private string message = "";
+
+    protected override void OnInitialized()
+    {
+        users = LibraryService.GetUsers().ToList();
+    }
+
+    private void LoadBorrowedBooks()
+    {
+        if (selectedUserId == 0)
+        {
+            borrowedBooks.Clear();
+            return;
+        }
+
+        var allBorrowed = LibraryService.GetBorrowedBooks();
+
+        if (allBorrowed.ContainsKey(selectedUserId))
+        {
+            borrowedBooks = allBorrowed[selectedUserId];
+        }
+        else
+        {
+            borrowedBooks = new List<Book>();
+        }
+    }
+
+    private void ReturnBook(int bookId)
+    {
+        bool success = LibraryService.ReturnBook(selectedUserId, bookId);
+
+        if (success)
+        {
+            message = "Book returned successfully.";
+            LoadBorrowedBooks(); // refresh list
+        }
+        else
+        {
+            message = "Return failed.";
+        }
+    }
+}

@@ -1,0 +1,84 @@
+﻿@page "/borrow"
+@rendermode InteractiveServer
+@using Lab5LibraryApp.Models
+@using Lab5LibraryApp.Services
+@inject ILibraryService LibraryService
+
+<h3>Borrow Book</h3>
+
+<div class="mb-3">
+    <label>Select Book:</label>
+    <select class="form-control mb-2" @bind="selectedBookId">
+        <option value="0">-- Select Book --</option>
+        @foreach (var book in books)
+        {
+            <option value="@book.Id">@book.Title</option>
+        }
+    </select>
+
+    <label>Select User:</label>
+    <select class="form-control mb-2" @bind="selectedUserId">
+        <option value="0">-- Select User --</option>
+        @foreach (var user in users)
+        {
+            <option value="@user.Id">@user.Name</option>
+        }
+    </select>
+
+    <button class="btn btn-primary" @onclick="BorrowBook">Borrow</button>
+</div>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <p>@message</p>
+}
+
+<h4>Available Books</h4>
+<ul>
+    @foreach (var book in books)
+    {
+        <li>@book.Title</li>
+    }
+</ul>
+
+@code {
+    private List<Book> books = new();
+    private List<User> users = new();
+
+    private int selectedBookId;
+    private int selectedUserId;
+
+    private string message = "";
+
+    protected override void OnInitialized()
+    {
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        books = LibraryService.GetBooks().ToList();
+        users = LibraryService.GetUsers().ToList();
+    }
+
+    private void BorrowBook()
+    {
+        if (selectedBookId == 0 || selectedUserId == 0)
+        {
+            message = "Please select both a book and a user.";
+            return;
+        }
+
+        bool success = LibraryService.BorrowBook(selectedBookId, selectedUserId);
+
+        if (success)
+        {
+            message = "Book borrowed successfully.";
+            LoadData(); // refresh available books
+        }
+        else
+        {
+            message = "Borrowing failed.";
+        }
+    }
+}

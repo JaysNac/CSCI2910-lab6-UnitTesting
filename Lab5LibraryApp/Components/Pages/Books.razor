@@ -1,0 +1,141 @@
+﻿
+@page "/books"
+@rendermode InteractiveServer
+@using Lab5LibraryApp.Models
+@using Lab5LibraryApp.Services
+@inject ILibraryService LibraryService
+<h3>Book Management</h3>
+
+<div class="mb-3">
+    <input @bind="newBook.Title" placeholder="Title" class="form-control mb-2" />
+    <input @bind="newBook.Author" placeholder="Author" class="form-control mb-2" />
+    <input @bind="newBook.ISBN" placeholder="ISBN" class="form-control mb-2" />
+    <button class="btn btn-primary" @onclick="AddBook">Add Book</button>
+</div>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <p>@message</p>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>ISBN</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var book in books)
+        {
+            <tr>
+                <td>@book.Id</td>
+                <td>@book.Title</td>
+                <td>@book.Author</td>
+                <td>@book.ISBN</td>
+                <td>
+                    <button class="btn btn-warning btn-sm me-2" @onclick="() => StartEdit(book)">Edit</button>
+                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteBook(book.Id)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (editingBook != null)
+{
+    <h4>Edit Book</h4>
+
+    <div class="mb-3">
+        <input @bind="editingBook.Title" class="form-control mb-2" />
+        <input @bind="editingBook.Author" class="form-control mb-2" />
+        <input @bind="editingBook.ISBN" class="form-control mb-2" />
+        <button class="btn btn-success me-2" @onclick="SaveEdit">Save</button>
+        <button class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+    </div>
+}
+
+@code {
+    private List<Book> books = new();
+    private Book newBook = new();
+    private Book? editingBook;
+    private string message = "";
+
+    protected override void OnInitialized()
+    {
+        LoadBooks();
+    }
+
+    private void LoadBooks()
+    {
+        books = LibraryService.GetBooks().ToList();
+    }
+
+    private void AddBook()
+    {
+        if (string.IsNullOrWhiteSpace(newBook.Title) ||
+            string.IsNullOrWhiteSpace(newBook.Author) ||
+            string.IsNullOrWhiteSpace(newBook.ISBN))
+        {
+            message = "Please fill in all book fields!!";
+            return;
+        }
+
+        LibraryService.AddBook(new Book
+        {
+            Title = newBook.Title,
+            Author = newBook.Author,
+            ISBN = newBook.ISBN
+        });
+
+        newBook = new Book();
+        message = "Book added successfully.";
+        LoadBooks();
+    }
+
+    private void DeleteBook(int id)
+    {
+        LibraryService.DeleteBook(id);
+        message = "Book deleted successfully.";
+        LoadBooks();
+    }
+
+    private void StartEdit(Book book)
+    {
+        editingBook = new Book
+        {
+            Id = book.Id,
+            Title = book.Title,
+            Author = book.Author,
+            ISBN = book.ISBN
+        };
+    }
+
+    private void SaveEdit()
+    {
+        if (editingBook == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(editingBook.Title) ||
+            string.IsNullOrWhiteSpace(editingBook.Author) ||
+            string.IsNullOrWhiteSpace(editingBook.ISBN))
+        {
+            message = "fill in all edit fields.";
+            return;
+        }
+
+        LibraryService.EditBook(editingBook);
+        editingBook = null;
+        message = "Book updated successfully.";
+        LoadBooks();
+    }
+
+    private void CancelEdit()
+    {
+        editingBook = null;
+        message = "";
+    }
+}
